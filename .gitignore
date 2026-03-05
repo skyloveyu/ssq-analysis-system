@@ -1,0 +1,11 @@
+node_modules/
+.idea/
+.venv/
+__pycache__/
+.DS_Store
+*.log
+*.py
+*.csv
+data/*.json
+tfjs_model/
+.env

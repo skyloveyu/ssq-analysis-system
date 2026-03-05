@@ -1,0 +1,1 @@
+{"lastTrained":"2026-03-05T01:43:59.326Z","params":{"SEQ_LEN":10,"D_MODEL":32,"D_FF":64,"NUM_LAYERS":2,"EPOCHS":30,"BATCH_SIZE":64}}

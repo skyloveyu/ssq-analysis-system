@@ -1,0 +1,17 @@
+{
+  "name": "ssq-analyzer",
+  "version": "1.0.0",
+  "description": "双色球智能数据分析系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0-rc.12",
+    "express": "^4.18.2"
+  }
+}

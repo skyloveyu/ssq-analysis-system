@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>双色球智能分析系统</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #0B0E17;
+      --card: rgba(18, 24, 48, 0.85);
+      --card-h: rgba(25, 32, 60, 0.95);
+      --bdr: rgba(255, 255, 255, 0.06);
+      --rb: linear-gradient(135deg, #E53935, #FF6F61);
+      --bb: linear-gradient(135deg, #1E88E5, #42A5F5);
+      --gold: #FFD54F;
+      --t1: #E8EAF6;
+      --t2: rgba(255, 255, 255, 0.45)
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      min-height: 100vh
+    }
+
+    .hdr {
+      background: linear-gradient(135deg, #1a1a3e, #2d1b69, #1a1a3e);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-bottom: 1px solid var(--bdr);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px)
+    }
+
+    .hdr h1 {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #FFD54F, #FF8A65, #FF5252);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent
+    }
+
+    .hdr .m {
+      font-size: 13px;
+      color: var(--t2)
+    }
+
+    .btn {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #7C4DFF, #536DFE);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .3s;
+      position: relative;
+      overflow: hidden
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(124, 77, 255, .4)
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none
+    }
+
+    .btn.ld::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(90deg, transparent, rgba(255, 255, 255, .15) 50%, transparent);
+      background-size: 200% 100%;
+      animation: sh 1.5s infinite
+    }
+
+    @keyframes sh {
+      0% {
+        background-position: 200%
+      }
+
+      100% {
+        background-position: -200%
+      }
+    }
+
+    .ct {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px
+    }
+
+    .cd {
+      background: var(--card);
+      border: 1px solid var(--bdr);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(12px)
+    }
+
+    .cd:hover {
+      background: var(--card-h)
+    }
+
+    .ct-t {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .dp {
+      display: none
+    }
+
+    .dp.sh {
+      display: block;
+      animation: sd .4s
+    }
+
+    @keyframes sd {
+      from {
+        opacity: 0;
+        transform: translateY(-16px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .dm {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 14px
+    }
+
+    .dm.ok {
+      background: rgba(102, 187, 106, .12);
+      border: 1px solid rgba(102, 187, 106, .3)
+    }
+
+    .dm.er {
+      background: rgba(239, 83, 80, .12);
+      border: 1px solid rgba(239, 83, 80, .3)
+    }
+
+    .nr {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px
+    }
+
+    .ri {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px
+    }
+
+    .ri .is {
+      color: var(--gold);
+      font-weight: 600;
+      margin-right: 4px
+    }
+
+    .bl {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .3)
+    }
+
+    .bl.r {
+      background: var(--rb)
+    }
+
+    .bl.b {
+      background: var(--bb)
+    }
+
+    .bl.s {
+      width: 26px;
+      height: 26px;
+      font-size: 11px
+    }
+
+    .bl.l {
+      width: 36px;
+      height: 36px;
+      font-size: 15px
+    }
+
+    .cb {
+      width: 100%;
+      height: 360px
+    }
+
+    .ps {
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 8px;
+      color: var(--t1);
+      font-size: 13px;
+      cursor: pointer;
+      outline: none
+    }
+
+    .ps option {
+      background: #1a1a3e
+    }
+
+    .sg {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px
+    }
+
+    .sc {
+      background: var(--card);
+      border: 1px solid var(--bdr);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center
+    }
+
+    .sc .v {
+      font-size: 32px;
+      font-weight: 700
+    }
+
+    .sc .lb {
+      font-size: 13px;
+      color: var(--t2);
+      margin-top: 4px
+    }
+
+    .at {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0
+    }
+
+    .at th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 13px;
+      color: var(--t2);
+      border-bottom: 1px solid var(--bdr)
+    }
+
+    .at td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, .03);
+      vertical-align: middle
+    }
+
+    .at tr:hover td {
+      background: rgba(124, 77, 255, .06)
+    }
+
+    .sn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px
+    }
+
+    .sb {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 16px
+    }
+
+    .sb.a {
+      background: linear-gradient(135deg, #FF5252, #FF8A80)
+    }
+
+    .sb.b {
+      background: linear-gradient(135deg, #448AFF, #82B1FF)
+    }
+
+    .sb.c {
+      background: linear-gradient(135deg, #66BB6A, #A5D6A7)
+    }
+
+    .sb.z {
+      background: linear-gradient(135deg, #FFD54F, #FFE082);
+      color: #333
+    }
+
+    .br {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .mo {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, .65);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center
+    }
+
+    .mo.sh {
+      display: flex;
+      animation: fi .3s
+    }
+
+    @keyframes fi {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .mc {
+      background: #141830;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 20px;
+      padding: 28px;
+      width: 520px;
+      max-width: 92vw;
+      position: relative
+    }
+
+    .mx {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--t2);
+      font-size: 24px;
+      cursor: pointer
+    }
+
+    .mx:hover {
+      color: #fff
+    }
+
+    .mt {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .ms {
+      font-size: 13px;
+      color: var(--t2);
+      margin-bottom: 16px
+    }
+
+    .rx {
+      width: 100%;
+      height: 340px
+    }
+
+    .mg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px
+    }
+
+    .mi {
+      padding: 10px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 8px;
+      font-size: 13px
+    }
+
+    .mi .k {
+      color: var(--t2)
+    }
+
+    .mi .vl {
+      font-weight: 600;
+      float: right
+    }
+
+    .es {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--t2);
+      font-size: 16px
+    }
+
+    .es .ej {
+      font-size: 64px;
+      margin-bottom: 16px
+    }
+
+    /* 混合推荐 */
+    .mx-cd {
+      background: linear-gradient(135deg, rgba(40, 30, 10, 0.9), rgba(25, 20, 50, 0.9));
+      border: 1px solid rgba(255, 215, 0, 0.25)
+    }
+
+    .mx-cd:hover {
+      background: linear-gradient(135deg, rgba(50, 38, 12, 0.95), rgba(30, 25, 60, 0.95))
+    }
+
+    .mx-s {
+      margin-bottom: 20px
+    }
+
+    .mx-st {
+      font-size: 14px;
+      color: var(--t2);
+      margin-bottom: 12px;
+      font-weight: 600
+    }
+
+    .mx-bl {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px
+    }
+
+    .mx-bi {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 6px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      transition: background .2s
+    }
+
+    .mx-bi:hover {
+      background: rgba(255, 255, 255, 0.08)
+    }
+
+    .mx-sc {
+      font-size: 11px;
+      color: var(--gold);
+      font-weight: 600
+    }
+
+    .mx-sr {
+      font-size: 10px;
+      letter-spacing: 1px
+    }
+
+    .mx-lg {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 12px;
+      color: var(--t2);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px
+    }
+
+    .mx-lg span {
+      color: var(--gold)
+    }
+
+    /* 节奏预测 */
+    .rp-cd {
+      background: linear-gradient(135deg, rgba(10, 30, 40, 0.9), rgba(20, 20, 50, 0.9));
+      border: 1px solid rgba(0, 200, 255, 0.2)
+    }
+
+    .rp-cd:hover {
+      background: linear-gradient(135deg, rgba(15, 38, 50, 0.95), rgba(25, 25, 60, 0.95))
+    }
+
+    .rp-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .rp-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .03);
+      cursor: pointer;
+      min-width: 220px;
+      flex: 1;
+      transition: background .2s
+    }
+
+    .rp-item:hover {
+      background: rgba(255, 255, 255, .08)
+    }
+
+    .rp-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .rp-bar-bg {
+      height: 6px;
+      background: rgba(255, 255, 255, .08);
+      border-radius: 3px;
+      margin-top: 4px;
+      overflow: hidden
+    }
+
+    .rp-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .3s
+    }
+
+    .rp-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--t2);
+      margin-top: 3px
+    }
+
+    .rp-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      white-space: nowrap
+    }
+
+    .rp-tag.hot {
+      background: rgba(255, 82, 82, .2);
+      color: #FF5252
+    }
+
+    .rp-tag.warm {
+      background: rgba(255, 167, 38, .2);
+      color: #FFA726
+    }
+
+    .rp-tag.cool {
+      background: rgba(66, 165, 245, .2);
+      color: #42A5F5
+    }
+
+    /* 推荐组合 */
+    .cb-cd {
+      background: linear-gradient(135deg, rgba(30, 10, 40, 0.9), rgba(15, 25, 50, 0.9));
+      border: 1px solid rgba(200, 100, 255, 0.2)
+    }
+
+    .cb-cd:hover {
+      background: linear-gradient(135deg, rgba(38, 15, 50, 0.95), rgba(20, 30, 60, 0.95))
+    }
+
+    .cb-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .cb-ticket {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      transition: all .2s
+    }
+
+    .cb-ticket:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(200, 100, 255, 0.2)
+    }
+
+    .cb-label {
+      min-width: 110px
+    }
+
+    .cb-label .cb-icon {
+      font-size: 18px
+    }
+
+    .cb-label .cb-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 1px
+    }
+
+    .cb-label .cb-desc {
+      font-size: 10px;
+      color: var(--t2)
+    }
+
+    .cb-nums {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .cb-nums .bl {
+      width: 38px;
+      height: 38px;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+      transition: transform .2s
+    }
+
+    .cb-nums .bl:hover {
+      transform: scale(1.15)
+    }
+
+    .cb-plus {
+      color: var(--t2);
+      font-size: 18px;
+      margin: 0 4px
+    }
+
+    .cb-note {
+      margin-top: 12px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 12px;
+      color: var(--t2);
+      text-align: center
+    }
+
+    /* AI 模型推荐 */
+    .ai-cd {
+      background: linear-gradient(135deg, rgba(10, 40, 30, 0.9), rgba(15, 20, 50, 0.9));
+      border: 1px solid rgba(0, 230, 118, 0.2)
+    }
+
+    .ai-cd:hover {
+      background: linear-gradient(135deg, rgba(15, 50, 38, 0.95), rgba(20, 25, 60, 0.95))
+    }
+
+    .ai-ctrl {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px
+    }
+
+    .ai-btn {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #00E676, #00C853);
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .3s
+    }
+
+    .ai-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 230, 118, .4)
+    }
+
+    .ai-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none
+    }
+
+    .ai-status {
+      font-size: 13px;
+      color: var(--t2)
+    }
+
+    .ai-progress {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, .08);
+      border-radius: 3px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      display: none
+    }
+
+    .ai-progress.show {
+      display: block
+    }
+
+    .ai-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00E676, #76FF03);
+      border-radius: 3px;
+      transition: width .3s;
+      width: 0
+    }
+
+    .ai-result {
+      display: none
+    }
+
+    .ai-result.show {
+      display: block;
+      animation: sd .4s
+    }
+
+    .ai-combo {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(0, 230, 118, 0.15);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px
+    }
+
+    .ai-combo-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--t1);
+      margin-bottom: 8px
+    }
+
+    .ai-combo-balls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px
+    }
+
+    .ai-combo-balls .bl {
+      width: 42px;
+      height: 42px;
+      font-size: 16px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, .3)
+    }
+
+    .ai-prob-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 6px;
+      margin-top: 8px
+    }
+
+    .ai-prob-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .03);
+      font-size: 11px
+    }
+
+    .ai-prob-item .bl {
+      width: 28px;
+      height: 28px;
+      font-size: 11px;
+      margin-bottom: 2px
+    }
+
+    .ai-prob-bar {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, .08);
+      border-radius: 2px;
+      margin-top: 3px;
+      overflow: hidden
+    }
+
+    .ai-prob-fill {
+      height: 100%;
+      border-radius: 2px
+    }
+
+    @media(max-width:768px) {
+      .hdr {
+        padding: 16px
+      }
+
+      .hdr h1 {
+        font-size: 18px
+      }
+
+      .ct {
+        padding: 12px
+      }
+
+      .cd {
+        padding: 16px
+      }
+
+      .cb {
+        height: 280px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="hdr">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <h1>🎱 双色球智能分析系统</h1>
+        <span class="m" id="metaInfo">加载中...</span>
+      </div>
+      <div id="latestDraw" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px">
+        <span style="color:var(--gold);font-weight:600" id="latestLabel"></span>
+        <span id="latestBalls"></span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <a href="/history.html"
+        style="padding:10px 20px;background:rgba(255,255,255,.08);color:var(--t1);border:1px solid rgba(255,255,255,.12);border-radius:8px;font-size:14px;text-decoration:none;transition:all .2s">📜
+        往期记录</a>
+      <button class="btn" id="btnU" onclick="doUpdate()">🔄 更新数据</button>
+    </div>
+  </header>
+  <div class="ct">
+    <div class="cd dp" id="diffP">
+      <div class="ct-t">📡 更新结果</div>
+      <div id="diffC"></div>
+    </div>
+    <div class="sg" id="statsG"></div>
+    <div class="cd" id="redC" style="display:none">
+      <div class="ct-t" style="justify-content:space-between;flex-wrap:wrap">
+        <span>📊 红球号码频次分布</span>
+        <select id="pSel" class="ps" onchange="renderCharts()">
+          <option value="last30">近30期</option>
+          <option value="last100">近100期</option>
+          <option value="last1000">近1000期</option>
+          <option value="all">历史全部</option>
+        </select>
+      </div>
+      <div class="cb" id="redCh"></div>
+    </div>
+    <div class="cd" id="blueC" style="display:none">
+      <div class="ct-t">📊 蓝球号码频次分布</div>
+      <div class="cb" id="blueCh"></div>
+    </div>
+    <div class="cd" id="arenaC" style="display:none">
+      <div class="ct-t" style="justify-content:space-between;flex-wrap:wrap">
+        <span>🏆 策略推荐擂台赛</span>
+        <select id="aSel" class="ps" onchange="renderArena()">
+          <option value="last30">近30期</option>
+          <option value="last100">近100期</option>
+          <option value="last1000">近1000期</option>
+          <option value="all">历史全部</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="at" id="arenaTb"></table>
+      </div>
+    </div>
+    <div class="cd mx-cd" id="mixC" style="display:none">
+      <div class="ct-t" style="color:var(--gold)">👑 终极混合推荐（跨周期融合）</div>
+      <div id="mixCt"></div>
+    </div>
+    <div class="cd rp-cd" id="rhythmC" style="display:none">
+      <div class="ct-t" style="color:#4FC3F7">⏱️ 节奏周期预测（出现节奏分析）</div>
+      <div id="rhythmCt"></div>
+    </div>
+    <div class="cd cb-cd" id="comboC" style="display:none">
+      <div class="ct-t" style="color:#CE93D8">🎰 推荐号码组合（6红+1蓝）</div>
+      <div id="comboCt"></div>
+    </div>
+    <div class="cd ai-cd" id="aiC" style="display:none">
+      <div class="ct-t" style="color:#00E676">🤖 Transformer AI 模型预测</div>
+      <p style="font-size:13px;color:var(--t2);margin-bottom:16px">基于 Transformer
+        深度学习模型，使用多层自注意力机制分析历史开奖序列模式，预测下一期号码概率分布。</p>
+      <div class="ai-ctrl">
+        <button class="ai-btn" id="aiTrainBtn" onclick="startTraining()">🧠 训练模型</button>
+        <button class="ai-btn" id="aiPredBtn" onclick="aiPredict()"
+          style="background:linear-gradient(135deg,#448AFF,#2979FF);color:#fff" disabled>🔮 AI 预测</button>
+        <button class="ai-btn" id="btnSave" onclick="saveAllRecommendations()"
+          style="background:linear-gradient(135deg,#FF6F00,#FF8F00);color:#fff">💾 保存推荐到下期</button>
+        <span class="ai-status" id="aiStatus">检查模型状态...</span>
+      </div>
+      <div class="ai-progress" id="aiProgress">
+        <div class="ai-progress-bar" id="aiProgressBar"></div>
+      </div>
+      <div class="ai-result" id="aiResult"></div>
+    </div>
+    <div class="es" id="emptyS">
+      <div class="ej">🎱</div>
+      <p>暂无分析数据</p>
+      <p style="margin-top:8px;font-size:14px">请点击右上角「更新数据」按钮获取最新开奖信息</p>
+    </div>
+  </div>
+  <div class="mo" id="radarM" onclick="if(event.target===this)closeM()">
+    <div class="mc">
+      <button class="mx" onclick="closeM()">✕</button>
+      <div class="mt" id="mTitle"></div>
+      <div class="ms" id="mSub"></div>
+      <div class="rx" id="radarCh"></div>
+      <div class="mg" id="mStats"></div>
+    </div>
+  </div>
+  <script>
+    var D = null, rCI = null, bCI = null, rdCI = null;
+    window.addEventListener('DOMContentLoaded', function () {
+      var h = location.hostname;
+      if (h !== 'localhost' && h !== '127.0.0.1') {
+        document.getElementById('btnU').style.display = 'none';
+      }
+      load();
+    });
+    window.addEventListener('resize', function () { rCI && rCI.resize(); bCI && bCI.resize(); });
+
+    function load() {
+      fetch('/api/analyzed').then(function (r) { return r.json() }).then(function (j) {
+        if (j.error) { empty(); return; }
+        D = j;
+        try { renderAll(); } catch (e) { console.error('renderAll error:', e); }
+      }).catch(function (e) { console.error('load error:', e); empty(); });
+    }
+    function empty() {
+      document.getElementById('emptyS').style.display = 'block';
+      ['redC', 'blueC', 'arenaC', 'mixC', 'rhythmC', 'comboC', 'aiC'].forEach(function (id) { document.getElementById(id).style.display = 'none'; });
+    }
+    function renderAll() {
+      document.getElementById('emptyS').style.display = 'none';
+      ['redC', 'blueC', 'arenaC', 'mixC', 'rhythmC', 'comboC', 'aiC'].forEach(function (id) { document.getElementById(id).style.display = 'block'; });
+      var fns = [renderMeta, renderStats, renderCharts, renderArena, renderMixed, renderRhythm, renderCombos, checkModelStatus];
+      fns.forEach(function (fn) { try { fn(); } catch (e) { console.error(fn.name + ' error:', e); } });
+    }
+    function renderMeta() {
+      document.getElementById('metaInfo').textContent = '共 ' + D.totalIssues + ' 期 | 最新: 第' + D.latestIssue + '期 (' + D.latestDate + ')';
+      if (D.latestReds && D.latestBlue) {
+        var el = document.getElementById('latestDraw');
+        el.style.display = 'flex';
+        document.getElementById('latestLabel').textContent = '第' + D.latestIssue + '期开奖:';
+        document.getElementById('latestBalls').innerHTML = D.latestReds.map(function (n) {
+          return '<span class="bl r s">' + String(n).padStart(2, '0') + '</span>';
+        }).join('') + '<span class="bl b s">' + String(D.latestBlue).padStart(2, '0') + '</span>';
+      }
+    }
+    function renderStats() {
+      var re = Object.entries(D.frequency.red.last30).sort(function (a, b) { return b[1] - a[1]; });
+      var be = Object.entries(D.frequency.blue.last30).sort(function (a, b) { return b[1] - a[1]; });
+      document.getElementById('statsG').innerHTML =
+        '<div class="sc"><div class="v" style="color:var(--gold)">' + D.totalIssues + '</div><div class="lb">历史总期数</div></div>' +
+        '<div class="sc"><div class="v" style="color:#FF5252">' + re[0][0] + '号</div><div class="lb">近30期最热红球 (' + re[0][1] + '次)</div></div>' +
+        '<div class="sc"><div class="v" style="color:#42A5F5">' + be[0][0] + '号</div><div class="lb">近30期最热蓝球 (' + be[0][1] + '次)</div></div>' +
+        '<div class="sc"><div class="v" style="color:#66BB6A">' + re[re.length - 1][0] + '号</div><div class="lb">近30期最冷红球 (' + re[re.length - 1][1] + '次)</div></div>';
+    }
+    function renderCharts() { var p = document.getElementById('pSel').value; renderRC(p); renderBC(p); }
+    function renderRC(p) {
+      var el = document.getElementById('redCh'), init = !rCI;
+      if (init) { rCI = echarts.init(el, 'dark'); rCI.on('click', function (e) { showRadar(Number(e.name), 'red'); }); }
+      var f = D.frequency.red[p], nums = [], vals = [], i;
+      for (i = 1; i <= 33; i++) { nums.push(i); vals.push(f[i] || 0); }
+      var mx = Math.max.apply(null, vals.concat([1]));
+      rCI.setOption({
+        animation: init, animationDuration: 300, backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', formatter: function (e) { var n = parseInt(e[0].axisValue), s = D.numberStats.red[n]; if (!s) return ''; return '<b style="color:#FF5252">红球 ' + String(n).padStart(2, '0') + '</b><br/>频次:' + e[0].value + ' 遗漏:' + s.currentGap + '期(均' + s.avgGap + ') 标准差:' + s.stdDev; } },
+        grid: { left: 48, right: 16, top: 24, bottom: 36 },
+        xAxis: { type: 'category', data: nums.map(function (n) { return String(n).padStart(2, '0'); }), axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11 }, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } } },
+        yAxis: { type: 'value', axisLabel: { color: 'rgba(255,255,255,0.4)' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+        series: [{ type: 'bar', data: vals, barWidth: '60%', itemStyle: { color: function (e) { var r = e.value / mx; return r > .8 ? '#FF5252' : r > .5 ? '#FF8A65' : '#FFAB91'; }, borderRadius: [4, 4, 0, 0] }, emphasis: { itemStyle: { color: '#FF1744' } } }]
+      }, true);
+    }
+    function renderBC(p) {
+      var el = document.getElementById('blueCh'), init = !bCI;
+      if (init) { bCI = echarts.init(el, 'dark'); bCI.on('click', function (e) { showRadar(Number(e.name), 'blue'); }); }
+      var f = D.frequency.blue[p], nums = [], vals = [], i;
+      for (i = 1; i <= 16; i++) { nums.push(i); vals.push(f[i] || 0); }
+      var mx = Math.max.apply(null, vals.concat([1]));
+      bCI.setOption({
+        animation: init, animationDuration: 300, backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', formatter: function (e) { var n = parseInt(e[0].axisValue), s = D.numberStats.blue[n]; if (!s) return ''; return '<b style="color:#42A5F5">蓝球 ' + String(n).padStart(2, '0') + '</b><br/>频次:' + e[0].value + ' 遗漏:' + s.currentGap + '期(均' + s.avgGap + ') 标准差:' + s.stdDev; } },
+        grid: { left: 48, right: 16, top: 24, bottom: 36 },
+        xAxis: { type: 'category', data: nums.map(function (n) { return String(n).padStart(2, '0'); }), axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12 }, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } } },
+        yAxis: { type: 'value', axisLabel: { color: 'rgba(255,255,255,0.4)' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+        series: [{ type: 'bar', data: vals, barWidth: '55%', itemStyle: { color: function (e) { var r = e.value / mx; return r > .8 ? '#1E88E5' : r > .5 ? '#42A5F5' : '#90CAF9'; }, borderRadius: [4, 4, 0, 0] }, emphasis: { itemStyle: { color: '#2962FF' } } }]
+      }, true);
+    }
+    function showRadar(num, type) {
+      var st = D.numberStats[type][num]; if (!st || !st.radarData) return;
+      var rd = st.radarData, isR = type === 'red', clr = isR ? '#FF5252' : '#42A5F5', lbl = isR ? '红球' : '蓝球', ns = String(num).padStart(2, '0');
+      document.getElementById('mTitle').innerHTML = '<span class="bl ' + type + ' l">' + ns + '</span> ' + lbl + ' ' + ns + ' 号多维分析';
+      document.getElementById('mSub').textContent = '综合推荐指数: ' + rd.compositeScore + ' 分';
+      document.getElementById('mStats').innerHTML = '<div class="mi"><span class="k">当前遗漏</span><span class="vl">' + st.currentGap + ' 期</span></div><div class="mi"><span class="k">平均遗漏</span><span class="vl">' + st.avgGap + ' 期</span></div><div class="mi"><span class="k">遗漏比值</span><span class="vl">' + st.gapRatio + '</span></div><div class="mi"><span class="k">标准差</span><span class="vl">' + st.stdDev + '</span></div><div class="mi"><span class="k">策略A(追热)</span><span class="vl">' + st.scores.strategyA + '分</span></div><div class="mi"><span class="k">策略B(抄底)</span><span class="vl">' + st.scores.strategyB + '分</span></div><div class="mi"><span class="k">策略C(稳健)</span><span class="vl">' + st.scores.strategyC + '分</span></div><div class="mi"><span class="k">综合指数</span><span class="vl" style="color:' + clr + '">' + st.scores.composite + '分</span></div>';
+      var el = document.getElementById('radarCh'); if (!rdCI) rdCI = echarts.init(el, 'dark');
+      rdCI.setOption({ backgroundColor: 'transparent', radar: { indicator: [{ name: '近期热度', max: 100 }, { name: '中期走势', max: 100 }, { name: '遗漏偏离', max: 100 }, { name: '节奏稳定性', max: 100 }, { name: '综合推荐', max: 100 }], shape: 'polygon', splitNumber: 4, axisName: { color: 'rgba(255,255,255,0.65)', fontSize: 12 }, splitArea: { areaStyle: { color: ['rgba(124,77,255,.06)', 'rgba(124,77,255,.12)', 'rgba(124,77,255,.06)', 'rgba(124,77,255,.12)'] } }, splitLine: { lineStyle: { color: 'rgba(255,255,255,.1)' } }, axisLine: { lineStyle: { color: 'rgba(255,255,255,.1)' } } }, series: [{ type: 'radar', data: [{ value: [rd.recentHeat, rd.midTrend, rd.gapDeviation, rd.rhythmStability, rd.compositeScore], name: lbl + ' ' + ns, areaStyle: { color: isR ? 'rgba(255,82,82,.25)' : 'rgba(66,165,245,.25)' }, lineStyle: { color: clr, width: 2 }, itemStyle: { color: clr }, symbol: 'circle', symbolSize: 6 }] }] }, true);
+      rdCI.resize(); document.getElementById('radarM').classList.add('sh');
+    }
+    function closeM() { document.getElementById('radarM').classList.remove('sh'); }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeM(); });
+
+    function renderArena() {
+      var pk = document.getElementById('aSel').value, rk = D.rankings[pk]; if (!rk) return;
+      var pl = { last30: '近30期', last100: '近100期', last1000: '近1000期', all: '全部历史' };
+      var strats = [{ k: 'strategyA', n: '策略A·追热点', i: '🔥', c: 'a', d: pl[pk] + '高频优先' }, { k: 'strategyB', n: '策略B·极限抄底', i: '🧊', c: 'b', d: '遗漏极值反转' }, { k: 'strategyC', n: '策略C·稳健节奏', i: '🎯', c: 'c', d: '规律+时机' }, { k: 'composite', n: '综合推荐指数', i: '👑', c: 'z', d: '三策略综合' }];
+      var h = '<thead><tr><th style="width:200px">策略</th><th>推荐红球(前6)</th><th>推荐蓝球(前2)</th><th style="width:120px">说明</th></tr></thead><tbody>';
+      strats.forEach(function (s) {
+        var tr = rk.red[s.k].slice(0, 6), tb = rk.blue[s.k].slice(0, 2);
+        h += '<tr><td><div class="sn"><span class="sb ' + s.c + '">' + s.i + '</span>' + s.n + '</div></td>';
+        h += '<td><div class="br">' + tr.map(function (r) { return '<span class="bl r s" title="得分:' + r.score + '" style="cursor:pointer" onclick="showRadar(' + r.number + ',\'red\')">' + String(r.number).padStart(2, '0') + '</span>'; }).join('') + '</div></td>';
+        h += '<td><div class="br">' + tb.map(function (b) { return '<span class="bl b s" title="得分:' + b.score + '" style="cursor:pointer" onclick="showRadar(' + b.number + ',\'blue\')">' + String(b.number).padStart(2, '0') + '</span>'; }).join('') + '</div></td>';
+        h += '<td style="font-size:12px;color:var(--t2)">' + s.d + '</td></tr>';
+      });
+      h += '</tbody>'; document.getElementById('arenaTb').innerHTML = h;
+    }
+
+    function renderMixed() {
+      var mr = D.mixedRankings; if (!mr) { document.getElementById('mixC').style.display = 'none'; return; }
+      var tr = mr.red.slice(0, 6), tb = mr.blue.slice(0, 2);
+      var stars = function (n) { return '★'.repeat(n) + '☆'.repeat(4 - n); };
+      var pn = { last30: '30期', last100: '100期', last1000: '1000期', all: '全部' };
+      function bg(items, type) {
+        return items.map(function (it) {
+          var ns = String(it.number).padStart(2, '0');
+          var dt = Object.keys(it.periodScores).map(function (k) { return pn[k] + ':' + it.periodScores[k]; }).join(' | ');
+          return '<div class="mx-bi" onclick="showRadar(' + it.number + ',\'' + type + '\')" title="' + dt + '"><span class="bl ' + type[0] + '" style="width:40px;height:40px;font-size:16px">' + ns + '</span><span class="mx-sc">' + it.score + '分</span><span class="mx-sr" style="color:' + (it.agreement >= 3 ? '#FFD54F' : it.agreement >= 2 ? '#FFE082' : '#666') + '">' + stars(it.agreement) + '</span></div>';
+        }).join('');
+      }
+      document.getElementById('mixCt').innerHTML = '<div class="mx-s"><div class="mx-st">🔴 推荐红球(前6)</div><div class="mx-bl">' + bg(tr, 'red') + '</div></div><div class="mx-s"><div class="mx-st">🔵 推荐蓝球(前2)</div><div class="mx-bl">' + bg(tb, 'blue') + '</div></div><div class="mx-lg"><span>★</span> 共识度=在四个周期综合排名中进入前列的次数 | <span>★★★★</span> 四周期一致 | 悬浮查看各周期得分</div>';
+    }
+
+    function renderRhythm() {
+      var rp = D.rhythmPrediction; if (!rp) { document.getElementById('rhythmC').style.display = 'none'; return; }
+      function renderGroup(items, type, topN) {
+        var top = items.slice(0, topN);
+        return top.map(function (it) {
+          var ns = String(it.number).padStart(2, '0');
+          var pct = Math.min(it.overdueRatio * 100, 150);
+          var barClr = it.overdueRatio >= 1.5 ? '#FF5252' : it.overdueRatio >= 1 ? '#FFA726' : '#4FC3F7';
+          var tag, tagCls;
+          if (it.dueIn <= 0) { tag = '已超期' + Math.abs(it.dueIn) + '期'; tagCls = 'hot'; }
+          else if (it.dueIn <= 2) { tag = '即将到期'; tagCls = 'warm'; }
+          else { tag = '约' + it.dueIn + '期后'; tagCls = 'cool'; }
+          return '<div class="rp-item" onclick="showRadar(' + it.number + ',\'' + type + '\')">'
+            + '<span class="bl ' + type[0] + '" style="width:38px;height:38px;font-size:15px">' + ns + '</span>'
+            + '<div class="rp-info">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center">'
+            + '<span style="font-weight:600;font-size:13px">预测分 ' + it.score + '</span>'
+            + '<span class="rp-tag ' + tagCls + '">' + tag + '</span></div>'
+            + '<div class="rp-bar-bg"><div class="rp-bar" style="width:' + Math.min(pct, 100) + '%;background:' + barClr + '"></div></div>'
+            + '<div class="rp-meta"><span>遗漏' + it.currentGap + '期 / 均' + it.avgInterval + '期</span><span>置信度 ' + Math.round(it.confidence * 100) + '%</span></div>'
+            + '</div></div>';
+        }).join('');
+      }
+      document.getElementById('rhythmCt').innerHTML =
+        '<p style="font-size:13px;color:var(--t2);margin-bottom:16px">根据每个号码历史出现的间隔节奏，预测当前最可能"破冰"出现的号码。超期越多+节奏越规律 → 预测分越高。</p>'
+        + '<div class="mx-s"><div class="mx-st">🔴 红球节奏预测 TOP 8</div><div class="rp-grid">' + renderGroup(rp.red, 'red', 8) + '</div></div>'
+        + '<div class="mx-s"><div class="mx-st">🔵 蓝球节奏预测 TOP 4</div><div class="rp-grid">' + renderGroup(rp.blue, 'blue', 4) + '</div></div>'
+        + '<div class="mx-lg"><span>⏱️</span> 进度条=当前遗漏/平均间隔 | <span style="color:#FF5252">红色</span>=超期1.5倍+ <span style="color:#FFA726">橙色</span>=刚到期 <span style="color:#4FC3F7">蓝色</span>=未到期 | 置信度基于节奏规律性</div>';
+    }
+
+    function renderCombos() {
+      var rc = D.recommendedCombos;
+      if (!rc || !rc.length) { document.getElementById('comboC').style.display = 'none'; return; }
+      var h = '<div class="cb-list">';
+      rc.forEach(function (c) {
+        h += '<div class="cb-ticket">';
+        h += '<div class="cb-label"><div class="cb-icon">' + c.icon + '</div><div class="cb-name">' + c.name + '</div><div class="cb-desc">' + c.desc + '</div></div>';
+        h += '<div class="cb-nums">';
+        c.reds.forEach(function (n) {
+          h += '<span class="bl r" style="cursor:pointer" onclick="showRadar(' + n + ',\'red\')">' + String(n).padStart(2, '0') + '</span>';
+        });
+        h += '<span class="cb-plus">+</span>';
+        h += '<span class="bl b" style="cursor:pointer" onclick="showRadar(' + c.blue + ',\'blue\')">' + String(c.blue).padStart(2, '0') + '</span>';
+        h += '</div></div>';
+      });
+      h += '</div>';
+      h += '<div class="cb-note" style="margin-top:8px">⚠️ 以上组合基于历史数据统计分析生成，仅供参考，购买彩票需理性。</div>';
+      document.getElementById('comboCt').innerHTML = h;
+    }
+
+    // ==================== AI 模型 ====================
+    var aiPolling = null;
+
+    function checkModelStatus() {
+      fetch('/api/model/status').then(function (r) { return r.json(); }).then(function (s) {
+        var statusEl = document.getElementById('aiStatus');
+        var trainBtn = document.getElementById('aiTrainBtn');
+        var predBtn = document.getElementById('aiPredBtn');
+        var progEl = document.getElementById('aiProgress');
+        var progBar = document.getElementById('aiProgressBar');
+
+        if (s.isTraining) {
+          statusEl.textContent = s.message;
+          trainBtn.disabled = true;
+          trainBtn.textContent = '⏳ 训练中...';
+          predBtn.disabled = true;
+          progEl.classList.add('show');
+          progBar.style.width = s.progress + '%';
+          if (!aiPolling) aiPolling = setInterval(checkModelStatus, 2000);
+        } else {
+          if (aiPolling) { clearInterval(aiPolling); aiPolling = null; }
+          trainBtn.disabled = false;
+          trainBtn.textContent = '🧠 训练模型';
+          if (s.hasModel) {
+            predBtn.disabled = false;
+            var dt = s.lastTrained ? new Date(s.lastTrained).toLocaleString('zh-CN') : '未知';
+            statusEl.innerHTML = '✅ 模型就绪 <span style="color:var(--t2);font-size:12px">(训练于 ' + dt + ')</span>';
+            progEl.classList.remove('show');
+          } else {
+            predBtn.disabled = true;
+            statusEl.textContent = '⚠️ 请先训练模型';
+            progEl.classList.remove('show');
+          }
+        }
+      }).catch(function () {
+        document.getElementById('aiStatus').textContent = '❌ 无法获取模型状态';
+      });
+    }
+
+    function startTraining() {
+      var btn = document.getElementById('aiTrainBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ 启动中...';
+      document.getElementById('aiStatus').textContent = '正在准备训练数据...';
+      document.getElementById('aiProgress').classList.add('show');
+      document.getElementById('aiProgressBar').style.width = '0%';
+
+      fetch('/api/model/train', { method: 'POST' }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.success) {
+          document.getElementById('aiStatus').textContent = '❌ ' + j.message;
+          btn.disabled = false;
+          btn.textContent = '🧠 训练模型';
+          return;
+        }
+        // 开始轮询训练进度
+        aiPolling = setInterval(checkModelStatus, 2000);
+      });
+    }
+
+    function aiPredict() {
+      var predBtn = document.getElementById('aiPredBtn');
+      predBtn.disabled = true;
+      predBtn.textContent = '⏳ 预测中...';
+
+      fetch('/api/model/predict').then(function (r) { return r.json(); }).then(function (j) {
+        predBtn.disabled = false;
+        predBtn.textContent = '🔮 AI 预测';
+        if (!j.success) {
+          alert('预测失败: ' + j.message);
+          return;
+        }
+        renderAIResult(j);
+      }).catch(function (e) {
+        predBtn.disabled = false;
+        predBtn.textContent = '🔮 AI 预测';
+        alert('预测失败: ' + e.message);
+      });
+    }
+
+    function renderAIResult(data) {
+      var p = data.prediction;
+      // 保存 AI 预测结果供保存按钮使用
+      lastAIPrediction = {
+        reds: p.reds,
+        blue: p.blue,
+        redProbabilities: p.redProbabilities,
+        blueProbabilities: p.blueProbabilities,
+        nextIssue: data.nextIssue,
+        nextDate: data.nextDate,
+        predictedAt: new Date().toISOString()
+      };
+      var h = '<div class="ai-combo" style="padding:10px;margin-top:10px">';
+      h += '<div class="ai-combo-title">🎯 AI 预测推荐 — 第' + data.nextIssue + '期 (' + data.nextDate + ')</div>';
+      h += '<div class="ai-combo-balls">';
+      p.reds.forEach(function (n) {
+        h += '<span class="bl r" style="cursor:pointer" onclick="showRadar(' + n + ',\'red\')">' + String(n).padStart(2, '0') + '</span>';
+      });
+      h += '<span style="color:var(--t2);font-size:20px;margin:0 6px">+</span>';
+      h += '<span class="bl b" style="cursor:pointer" onclick="showRadar(' + p.blue + ',\'blue\')">' + String(p.blue).padStart(2, '0') + '</span>';
+      h += '</div></div>';
+
+      // 红球概率 TOP 10
+      h += '<div style="margin-top:12px"><div style="font-size:13px;font-weight:600;color:#FF5252;margin-bottom:8px">🔴 红球概率 TOP 10</div>';
+      h += '<div class="ai-prob-grid">';
+      p.redProbabilities.forEach(function (item) {
+        var pct = Math.round(item.prob * 100);
+        h += '<div class="ai-prob-item"><span class="bl r">' + String(item.number).padStart(2, '0') + '</span>';
+        h += '<span style="color:#FFD54F;font-weight:600">' + pct + '%</span>';
+        h += '<div class="ai-prob-bar"><div class="ai-prob-fill" style="width:' + pct + '%;background:#FF5252"></div></div></div>';
+      });
+      h += '</div></div>';
+
+      // 蓝球概率 TOP 5
+      h += '<div style="margin-top:16px"><div style="font-size:13px;font-weight:600;color:#42A5F5;margin-bottom:8px">🔵 蓝球概率 TOP 5</div>';
+      h += '<div class="ai-prob-grid">';
+      p.blueProbabilities.forEach(function (item) {
+        var pct = Math.round(item.prob * 100);
+        h += '<div class="ai-prob-item"><span class="bl b">' + String(item.number).padStart(2, '0') + '</span>';
+        h += '<span style="color:#FFD54F;font-weight:600">' + pct + '%</span>';
+        h += '<div class="ai-prob-bar"><div class="ai-prob-fill" style="width:' + Math.min(pct * 2, 100) + '%;background:#42A5F5"></div></div></div>';
+      });
+      h += '</div></div>';
+
+      h += '<div class="cb-note" style="margin-top:16px">🤖 以上预测由 Transformer 深度学习模型生成（' + NUM_LAYERS + '层自注意力 + 位置编码 + 前馈网络），每次训练结果可能不同。仅供参考娱乐。</div>';
+
+      var el = document.getElementById('aiResult');
+      el.innerHTML = h;
+      el.classList.add('show');
+    }
+    var NUM_LAYERS = 2; // 显示用
+    var lastAIPrediction = null; // 保存最近一次 AI 预测结果
+
+    // ==================== 保存推荐 ====================
+    function saveAllRecommendations() {
+      var btn = document.getElementById('btnSave');
+      btn.disabled = true; btn.textContent = '⏳ 保存中...';
+
+      var body = {};
+      if (lastAIPrediction) {
+        body.aiPrediction = lastAIPrediction;
+      }
+
+      fetch('/api/recommendations/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        if (j.success) {
+          var p = document.getElementById('diffP'), c = document.getElementById('diffC');
+          c.innerHTML = '<div class="dm ok">💾 ' + j.message + '</div>';
+          p.classList.add('sh');
+          setTimeout(function () { p.classList.remove('sh'); }, 4000);
+        } else {
+          alert('保存失败: ' + j.message);
+        }
+      }).catch(function (e) {
+        alert('保存失败: ' + e.message);
+      }).finally(function () {
+        btn.disabled = false; btn.textContent = '💾 保存推荐';
+      });
+    }
+
+    function doUpdate() {
+      var btn = document.getElementById('btnU'); btn.disabled = true; btn.classList.add('ld'); btn.textContent = '⏳ 正在更新...';
+      fetch('/api/update', { method: 'POST' }).then(function (r) { return r.json(); }).then(function (j) {
+        var p = document.getElementById('diffP'), c = document.getElementById('diffC');
+        if (j.success) {
+          var h = '<div class="dm ok">✅ ' + j.message + ' (共' + j.totalRecords + '期)</div>';
+          if (j.newRecords && j.newRecords.length > 0) { h += '<div class="nr">'; j.newRecords.forEach(function (r) { h += '<div class="ri"><span class="is">' + r.issue + '</span>' + r.reds.map(function (n) { return '<span class="bl r s">' + String(n).padStart(2, '0') + '</span>'; }).join('') + '<span class="bl b s">' + String(r.blue).padStart(2, '0') + '</span></div>'; }); h += '</div>'; }
+          c.innerHTML = h; p.classList.add('sh'); load();
+        } else { c.innerHTML = '<div class="dm er">❌ ' + j.message + '</div>'; p.classList.add('sh'); }
+      }).catch(function (e) {
+        document.getElementById('diffC').innerHTML = '<div class="dm er">❌ ' + e.message + '</div>'; document.getElementById('diffP').classList.add('sh');
+      }).finally(function () { btn.disabled = false; btn.classList.remove('ld'); btn.textContent = '🔄 更新数据'; });
+    }
+  </script>
+</body>
+
+</html>

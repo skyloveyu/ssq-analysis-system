@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>往期开奖记录 - 双色球智能分析系统</title>
+    <style>
+        :root {
+            --bg: #0B0E17;
+            --card: rgba(18, 24, 48, 0.85);
+            --bdr: rgba(255, 255, 255, 0.06);
+            --gold: #FFD54F;
+            --t1: #E8EAF6;
+            --t2: rgba(255, 255, 255, 0.45)
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--t1);
+            min-height: 100vh
+        }
+
+        .hdr {
+            background: linear-gradient(135deg, #1a1a3e, #2d1b69, #1a1a3e);
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid var(--bdr);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px)
+        }
+
+        .hdr h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #FFD54F, #FF8A65, #FF5252);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .hdr-links {
+            display: flex;
+            gap: 12px;
+            align-items: center
+        }
+
+        .hdr-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 22px;
+            border-radius: 8px;
+            transition: all .3s;
+            border: none;
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .15)
+        }
+
+        .hdr-links a:hover {
+            color: #fff;
+            background: linear-gradient(135deg, #7C4DFF, #536DFE);
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(124, 77, 255, .35)
+        }
+
+        .ct {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .search-input {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 8px;
+            color: var(--t1);
+            font-size: 14px;
+            outline: none;
+            width: 200px
+        }
+
+        .search-input::placeholder {
+            color: var(--t2)
+        }
+
+        .search-input:focus {
+            border-color: #7C4DFF
+        }
+
+        .search-btn {
+            padding: 8px 18px;
+            background: linear-gradient(135deg, #7C4DFF, #536DFE);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(124, 77, 255, .3)
+        }
+
+        .info {
+            font-size: 13px;
+            color: var(--t2)
+        }
+
+        .tbl-wrap {
+            background: var(--card);
+            border: 1px solid var(--bdr);
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(12px)
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        thead {
+            background: rgba(255, 255, 255, .03)
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 13px;
+            color: var(--t2);
+            font-weight: 600;
+            border-bottom: 1px solid var(--bdr);
+            white-space: nowrap
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, .03);
+            font-size: 14px
+        }
+
+        tr:hover td {
+            background: rgba(124, 77, 255, .04)
+        }
+
+        .bl {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, .3)
+        }
+
+        .bl.r {
+            background: linear-gradient(135deg, #E53935, #FF6F61)
+        }
+
+        .bl.b {
+            background: linear-gradient(135deg, #1E88E5, #42A5F5)
+        }
+
+        .balls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-wrap: nowrap
+        }
+
+        .issue {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 13px
+        }
+
+        .date {
+            color: var(--t2);
+            font-size: 12px
+        }
+
+        .pager {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap
+        }
+
+        .pg-btn {
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 6px;
+            color: var(--t1);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .pg-btn:hover {
+            background: rgba(124, 77, 255, .15);
+            border-color: rgba(124, 77, 255, .3)
+        }
+
+        .pg-btn.active {
+            background: linear-gradient(135deg, #7C4DFF, #536DFE);
+            border-color: transparent;
+            font-weight: 600
+        }
+
+        .pg-btn:disabled {
+            opacity: .3;
+            cursor: not-allowed
+        }
+
+        .pg-info {
+            font-size: 13px;
+            color: var(--t2);
+            margin: 0 8px
+        }
+
+        .pg-jump {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--t2)
+        }
+
+        .pg-jump input {
+            width: 50px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 6px;
+            color: var(--t1);
+            font-size: 13px;
+            text-align: center;
+            outline: none
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px;
+            color: var(--t2);
+            font-size: 15px
+        }
+
+        .plus {
+            color: var(--t2);
+            margin: 0 2px;
+            font-size: 12px
+        }
+
+        /* 查看推荐按钮 */
+        .rec-btn {
+            padding: 4px 12px;
+            background: linear-gradient(135deg, #CE93D8, #AB47BC);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap
+        }
+
+        .rec-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(171, 71, 188, .4)
+        }
+
+        .rec-btn.disabled {
+            background: rgba(255, 255, 255, .06);
+            color: var(--t2);
+            cursor: default
+        }
+
+        .rec-btn.disabled:hover {
+            transform: none;
+            box-shadow: none
+        }
+
+        /* 下一期行 */
+        .next-row td {
+            background: rgba(206, 147, 216, 0.06);
+            border-bottom: 2px solid rgba(206, 147, 216, 0.2)
+        }
+
+        .next-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: linear-gradient(135deg, #FF6F61, #FF8A65);
+            color: #fff;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 6px;
+            animation: pulse 2s infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .6
+            }
+        }
+
+        .waiting-text {
+            color: var(--t2);
+            font-size: 12px;
+            font-style: italic
+        }
+
+        /* 推荐弹窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, .65);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            animation: fadeIn .3s
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .modal-box {
+            background: #141830;
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 20px;
+            padding: 28px;
+            width: 680px;
+            max-width: 95vw;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--t2);
+            font-size: 24px;
+            cursor: pointer
+        }
+
+        .modal-close:hover {
+            color: #fff
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #CE93D8
+        }
+
+        .modal-sub {
+            font-size: 13px;
+            color: var(--t2);
+            margin-bottom: 12px
+        }
+
+        .combo-item {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 10px;
+            padding: 8px 14px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .combo-label {
+            min-width: 100px
+        }
+
+        .combo-label .c-icon {
+            font-size: 16px
+        }
+
+        .combo-label .c-name {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 1px
+        }
+
+        .combo-label .c-desc {
+            font-size: 10px;
+            color: var(--t2)
+        }
+
+        .combo-balls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap
+        }
+
+        .combo-balls .bl {
+            width: 34px;
+            height: 34px;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .3)
+        }
+
+        .combo-plus {
+            color: var(--t2);
+            font-size: 16px;
+            margin: 0 2px
+        }
+
+        @media(max-width:768px) {
+            .hdr {
+                padding: 16px
+            }
+
+            .ct {
+                padding: 12px
+            }
+
+            .search-input {
+                width: 140px
+            }
+
+            th,
+            td {
+                padding: 10px 8px
+            }
+
+            .bl {
+                width: 26px;
+                height: 26px;
+                font-size: 11px
+            }
+
+            .modal-box {
+                padding: 18px
+            }
+
+            .combo-item {
+                padding: 10px 12px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="hdr">
+        <h1>🎱 双色球智能分析系统</h1>
+        <div class="hdr-links">
+            <a href="/">📊 数据分析</a>
+        </div>
+    </header>
+    <div class="ct">
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索期号或日期..."
+                    onkeydown="if(event.key==='Enter')doSearch()">
+                <button class="search-btn" onclick="doSearch()">🔍 搜索</button>
+                <button class="search-btn" style="background:rgba(255,255,255,.08)"
+                    onclick="document.getElementById('searchInput').value='';doSearch()">清空</button>
+            </div>
+            <div class="info" id="pageInfo"></div>
+        </div>
+        <div class="tbl-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:100px">期号</th>
+                        <th style="width:100px">日期</th>
+                        <th>开奖号码</th>
+                        <th style="width:100px;text-align:center">推荐</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+        <div class="pager" id="pager"></div>
+    </div>
+
+    <!-- 推荐详情弹窗 -->
+    <div class="modal-overlay" id="recModal" onclick="if(event.target===this)closeRecModal()">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeRecModal()">✕</button>
+            <div class="modal-title" id="recTitle"></div>
+            <div class="modal-sub" id="recSub"></div>
+            <div id="recContent"></div>
+        </div>
+    </div>
+
+    <script>
+        var curPage = 1, totalPages = 1, pageSize = 30;
+
+        window.addEventListener('DOMContentLoaded', function () { loadPage(1); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeRecModal(); });
+
+        function loadPage(page) {
+            curPage = page;
+            var search = document.getElementById('searchInput').value.trim();
+            var url = '/api/history?page=' + page + '&pageSize=' + pageSize;
+            if (search) url += '&search=' + encodeURIComponent(search);
+
+            fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+                totalPages = d.totalPages;
+                document.getElementById('pageInfo').textContent =
+                    '共 ' + d.total + ' 条记录，第 ' + d.page + '/' + d.totalPages + ' 页';
+                renderTable(d.records, d.nextDraw);
+                renderPager(d.page, d.totalPages);
+            });
+        }
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+
+        function renderBalls(reds, blue) {
+            var h = '<div class="balls">';
+            reds.forEach(function (n) {
+                h += '<span class="bl r">' + pad2(n) + '</span>';
+            });
+            h += '<span class="plus">+</span>';
+            h += '<span class="bl b">' + pad2(blue) + '</span>';
+            h += '</div>';
+            return h;
+        }
+
+        function renderTable(records, nextDraw) {
+            var html = '';
+
+            // 下一期 — 未开彩行
+            if (nextDraw) {
+                html += '<tr class="next-row">';
+                html += '<td><span class="issue">' + nextDraw.issue + '</span><span class="next-badge">下一期</span></td>';
+                html += '<td><span class="date">' + nextDraw.date + '</span></td>';
+                html += '<td><span class="waiting-text">⏳ 等待开奖...</span></td>';
+                if (nextDraw.hasRecommendation) {
+                    html += '<td style="text-align:center"><button class="rec-btn" onclick="showRec(\'' + nextDraw.issue + '\')">🔮 查看推荐</button></td>';
+                } else {
+                    html += '<td style="text-align:center"><span class="rec-btn disabled">暂无</span></td>';
+                }
+                html += '</tr>';
+            }
+
+            if (!records.length && !nextDraw) {
+                document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="empty">没有找到匹配的记录</td></tr>';
+                return;
+            }
+
+            records.forEach(function (r) {
+                html += '<tr>';
+                html += '<td><span class="issue">' + r.issue + '</span></td>';
+                html += '<td><span class="date">' + (r.date || '-') + '</span></td>';
+                html += '<td>' + renderBalls(r.reds, r.blue) + '</td>';
+                if (r.hasRecommendation) {
+                    html += '<td style="text-align:center"><button class="rec-btn" onclick="showRec(\'' + r.issue + '\')">🔮 查看推荐</button></td>';
+                } else {
+                    html += '<td style="text-align:center"><span class="rec-btn disabled">—</span></td>';
+                }
+                html += '</tr>';
+            });
+            document.getElementById('tbody').innerHTML = html;
+        }
+
+        function renderPager(page, total) {
+            if (total <= 1) { document.getElementById('pager').innerHTML = ''; return; }
+            var html = '';
+            html += '<button class="pg-btn" onclick="loadPage(1)" ' + (page <= 1 ? 'disabled' : '') + '>首页</button>';
+            html += '<button class="pg-btn" onclick="loadPage(' + (page - 1) + ')" ' + (page <= 1 ? 'disabled' : '') + '>‹ 上一页</button>';
+
+            var start = Math.max(1, page - 3);
+            var end = Math.min(total, page + 3);
+            if (start > 1) html += '<span class="pg-info">...</span>';
+            for (var i = start; i <= end; i++) {
+                html += '<button class="pg-btn' + (i === page ? ' active' : '') + '" onclick="loadPage(' + i + ')">' + i + '</button>';
+            }
+            if (end < total) html += '<span class="pg-info">...</span>';
+
+            html += '<button class="pg-btn" onclick="loadPage(' + (page + 1) + ')" ' + (page >= total ? 'disabled' : '') + '>下一页 ›</button>';
+            html += '<button class="pg-btn" onclick="loadPage(' + total + ')" ' + (page >= total ? 'disabled' : '') + '>末页</button>';
+            html += '<div class="pg-jump">跳至 <input type="number" id="jumpInput" min="1" max="' + total + '" value="' + page + '" onkeydown="if(event.key===\'Enter\')jumpTo()"> 页</div>';
+            document.getElementById('pager').innerHTML = html;
+        }
+
+        function jumpTo() {
+            var v = parseInt(document.getElementById('jumpInput').value);
+            if (v >= 1 && v <= totalPages) loadPage(v);
+        }
+
+        function doSearch() { loadPage(1); }
+
+        // ==================== 推荐弹窗 ====================
+        function showRec(issue) {
+            fetch('/api/recommendations/' + issue).then(function (r) { return r.json(); }).then(function (d) {
+                if (!d.found) {
+                    alert('未找到该期推荐数据');
+                    return;
+                }
+                var rec = d.data;
+                document.getElementById('recTitle').textContent = '🔮 第' + rec.issue + '期 推荐号码';
+                document.getElementById('recSub').textContent = '开奖日期: ' + rec.date + ' | 基于第' + rec.basedOnIssue + '期数据分析 | 保存时间: ' + new Date(rec.savedAt).toLocaleString('zh-CN');
+
+                var h = '';
+                var stars = function (n) { return '★'.repeat(n) + '☆'.repeat(4 - n); };
+
+                // 推荐组合
+                if (rec.combos && rec.combos.length) {
+                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#CE93D8;margin-bottom:8px">🎰 推荐号码组合</div>';
+                    rec.combos.forEach(function (c) {
+                        h += '<div class="combo-item">';
+                        h += '<div class="combo-label"><div class="c-icon">' + c.icon + '</div><div class="c-name">' + c.name + '</div><div class="c-desc">' + c.desc + '</div></div>';
+                        h += '<div class="combo-balls">';
+                        c.reds.forEach(function (n) { h += '<span class="bl r" style="width:26px;height:26px;font-size:11px">' + pad2(n) + '</span>'; });
+                        h += '<span class="combo-plus" style="margin:0 4px">+</span>';
+                        h += '<span class="bl b" style="width:26px;height:26px;font-size:11px">' + pad2(c.blue) + '</span>';
+                        h += '</div></div>';
+                    });
+                    h += '</div>';
+                }
+
+                // 策略擂台赛（表格式，和首页一样）
+                if (rec.arena) {
+                    var pNames = { last30: '近30期', last100: '近100期', last1000: '近1000期', all: '全部历史' };
+                    var strats = [
+                        { k: 'strategyA', n: '策略A·追热点', i: '🔥', c: '#FF5252' },
+                        { k: 'strategyB', n: '策略B·极限抄底', i: '🧊', c: '#42A5F5' },
+                        { k: 'strategyC', n: '策略C·稳健节奏', i: '🎯', c: '#66BB6A' },
+                        { k: 'composite', n: '综合推荐指数', i: '👑', c: '#FFD54F' }
+                    ];
+                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#7C4DFF;margin-bottom:8px">🏆 策略推荐擂台赛</div>';
+                    Object.keys(pNames).forEach(function (pk) {
+                        if (!rec.arena[pk]) return;
+                        h += '<div style="margin-bottom:10px;padding:8px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.04)">';
+                        h += '<div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:6px">' + pNames[pk] + '</div>';
+                        h += '<table style="width:100%;border-collapse:collapse">';
+                        h += '<thead><tr style="font-size:10px;color:var(--t2)">';
+                        h += '<th style="text-align:left;padding:2px 0;width:120px">策略</th>';
+                        h += '<th style="text-align:left;padding:2px 0">推荐红球</th>';
+                        h += '<th style="text-align:left;padding:2px 0;width:80px">蓝球</th>';
+                        h += '</tr></thead><tbody>';
+                        strats.forEach(function (s) {
+                            var reds = rec.arena[pk].red[s.k] || [];
+                            var blues = rec.arena[pk].blue[s.k] || [];
+                            h += '<tr style="border-top:1px solid rgba(255,255,255,.03)">';
+                            h += '<td style="padding:4px 0"><div style="display:flex;align-items:center;gap:4px"><span style="font-size:14px">' + s.i + '</span><span style="font-size:11px;font-weight:600;color:' + s.c + '">' + s.n + '</span></div></td>';
+                            h += '<td style="padding:4px 0"><div style="display:flex;gap:3px;flex-wrap:wrap">';
+                            reds.forEach(function (r) { h += '<span class="bl r" style="width:22px;height:22px;font-size:10px">' + pad2(r.number) + '</span>'; });
+                            h += '</div></td>';
+                            h += '<td style="padding:4px 0"><div style="display:flex;gap:3px;flex-wrap:wrap">';
+                            blues.forEach(function (b) { h += '<span class="bl b" style="width:22px;height:22px;font-size:10px">' + pad2(b.number) + '</span>'; });
+                            h += '</div></td>';
+                            h += '</tr>';
+                        });
+                        h += '</tbody></table></div>';
+                    });
+                    h += '</div>';
+                }
+
+                // 终极混合推荐
+                if (rec.mixedRed && rec.mixedRed.length) {
+                    var pn = { last30: '30期', last100: '100期', last1000: '1000期', all: '全部' };
+                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#FFD54F;margin-bottom:8px">👑 终极混合推荐</div>';
+                    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+                    rec.mixedRed.forEach(function (r) {
+                        h += '<div style="display:flex;flex-direction:column;align-items:center">';
+                        h += '<span class="bl r" style="width:30px;height:30px;font-size:12px">' + pad2(r.number) + '</span>';
+                        h += '<span style="font-size:10px;color:#FFD54F;margin-top:2px">' + r.score + '</span>';
+                        h += '</div>';
+                    });
+                    h += '</div>';
+                    if (rec.mixedBlue && rec.mixedBlue.length) {
+                        h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">';
+                        rec.mixedBlue.forEach(function (b) {
+                            h += '<div style="display:flex;flex-direction:column;align-items:center">';
+                            h += '<span class="bl b" style="width:30px;height:30px;font-size:12px">' + pad2(b.number) + '</span>';
+                            h += '<span style="font-size:10px;color:#FFD54F;margin-top:2px">' + b.score + '</span>';
+                            h += '</div>';
+                        });
+                        h += '</div>';
+                    }
+                    h += '</div>';
+                }
+
+                // AI 预测
+                if (rec.aiPrediction) {
+                    var ai = rec.aiPrediction;
+                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#00E676;margin-bottom:8px">🤖 AI 模型预测</div>';
+                    h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+                    ai.reds.forEach(function (n) { h += '<span class="bl r" style="width:30px;height:30px;font-size:12px">' + pad2(n) + '</span>'; });
+                    h += '<span class="combo-plus" style="margin:0 4px">+</span>';
+                    h += '<span class="bl b" style="width:30px;height:30px;font-size:12px">' + pad2(ai.blue) + '</span>';
+                    h += '</div></div>';
+                }
+
+                h += '<div style="margin-top:16px;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.03);font-size:12px;color:var(--t2);text-align:center">⚠️ 以上推荐基于历史数据统计分析，仅供参考</div>';
+                document.getElementById('recContent').innerHTML = h;
+                document.getElementById('recModal').classList.add('show');
+            });
+        }
+
+        function closeRecModal() {
+            document.getElementById('recModal').classList.remove('show');
+        }
+    </script>
+</body>
+
+</html>
