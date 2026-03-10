@@ -294,12 +294,17 @@ app.post('/api/reanalyze', (req, res) => {
     res.json({ success: true, message: `分析完成，共 ${d.data.length} 条数据` });
 });
 
-/** 获取某期推荐数据 */
+/** 获取某期推荐数据（含实际开奖结果用于对比） */
 app.get('/api/recommendations/:issue', (req, res) => {
     const recs = loadRecommendations();
     const rec = recs[req.params.issue];
     if (!rec) return res.json({ found: false });
-    res.json({ found: true, data: rec });
+
+    // 查找该期的实际开奖结果
+    const d = loadData();
+    const actualDraw = d.data.find(r => r.issue === req.params.issue);
+
+    res.json({ found: true, data: rec, actualDraw: actualDraw || null });
 });
 
 /** 获取所有推荐数据的期号列表 */

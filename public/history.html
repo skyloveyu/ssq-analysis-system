@@ -506,6 +506,110 @@
                 padding: 10px 12px
             }
         }
+
+        /* 中奖号码匹配高亮 */
+        .bl.hit-red {
+            background: linear-gradient(135deg, #00C853, #69F0AE) !important;
+            box-shadow: 0 0 10px rgba(0, 200, 83, .6), 0 0 20px rgba(0, 200, 83, .2);
+            animation: hitPulse 1.5s infinite;
+            position: relative
+        }
+
+        .bl.hit-blue {
+            background: linear-gradient(135deg, #FFD54F, #FFB300) !important;
+            box-shadow: 0 0 10px rgba(255, 213, 79, .6), 0 0 20px rgba(255, 213, 79, .2);
+            animation: hitPulse 1.5s infinite;
+            position: relative
+        }
+
+        @keyframes hitPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(0, 200, 83, .4);
+            }
+
+            50% {
+                box-shadow: 0 0 16px rgba(0, 200, 83, .7), 0 0 30px rgba(0, 200, 83, .2);
+            }
+        }
+
+        .match-header {
+            background: linear-gradient(135deg, rgba(0, 200, 83, .12), rgba(255, 213, 79, .08));
+            border: 1px solid rgba(0, 200, 83, .2);
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px
+        }
+
+        .match-header .actual-draw {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap
+        }
+
+        .match-header .actual-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #69F0AE;
+            margin-right: 4px
+        }
+
+        .prize-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap
+        }
+
+        .prize-badge.win {
+            background: linear-gradient(135deg, #FFD54F, #FF8F00);
+            color: #1a1a3e;
+            box-shadow: 0 2px 10px rgba(255, 213, 79, .3)
+        }
+
+        .prize-badge.lose {
+            background: rgba(255, 255, 255, .06);
+            color: var(--t2)
+        }
+
+        .combo-match-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            flex-shrink: 0
+        }
+
+        .hit-count {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap
+        }
+
+        .hit-count.has-prize {
+            background: linear-gradient(135deg, rgba(255, 213, 79, .2), rgba(255, 143, 0, .15));
+            color: #FFD54F;
+            border: 1px solid rgba(255, 213, 79, .3)
+        }
+
+        .hit-count.no-prize {
+            background: rgba(255, 255, 255, .04);
+            color: var(--t2);
+            border: 1px solid rgba(255, 255, 255, .06)
+        }
     </style>
 </head>
 
@@ -651,6 +755,29 @@
 
         function doSearch() { loadPage(1); }
 
+        // ==================== 中奖判定 ====================
+        // 双色球中奖规则
+        function calcPrize(hitRed, hitBlue) {
+            if (hitRed === 6 && hitBlue) return { level: '一等奖', amount: '≥500万', emoji: '🏆' };
+            if (hitRed === 6 && !hitBlue) return { level: '二等奖', amount: '≥15万', emoji: '🥇' };
+            if (hitRed === 5 && hitBlue) return { level: '三等奖', amount: '3,000元', emoji: '🥈' };
+            if ((hitRed === 5 && !hitBlue) || (hitRed === 4 && hitBlue)) return { level: '四等奖', amount: '200元', emoji: '🥉' };
+            if ((hitRed === 4 && !hitBlue) || (hitRed === 3 && hitBlue)) return { level: '五等奖', amount: '10元', emoji: '🎫' };
+            if ((hitRed === 2 && hitBlue) || (hitRed === 1 && hitBlue) || (hitRed === 0 && hitBlue)) return { level: '六等奖', amount: '5元', emoji: '🎟️' };
+            return null;
+        }
+
+        function prizeBadgeHtml(prize) {
+            if (!prize) return '<span class="prize-badge lose">未中奖</span>';
+            return '<span class="prize-badge win">' + prize.emoji + ' ' + prize.level + ' ' + prize.amount + '</span>';
+        }
+
+        function hitCountHtml(hitRed, hitBlue, prize) {
+            var cls = prize ? 'has-prize' : 'no-prize';
+            var text = '红' + hitRed + ' 蓝' + (hitBlue ? '1' : '0');
+            return '<span class="hit-count ' + cls + '">' + text + '</span>';
+        }
+
         // ==================== 推荐弹窗 ====================
         function showRec(issue) {
             fetch('/api/recommendations/' + issue).then(function (r) { return r.json(); }).then(function (d) {
@@ -659,28 +786,80 @@
                     return;
                 }
                 var rec = d.data;
+                var actual = d.actualDraw; // { reds: [], blue: N } or null
+                var hasActual = actual && actual.reds && actual.reds.length > 0;
+
+                // 构建实际开奖号码的 Set 用于快速查询
+                var actualRedSet = {};
+                var actualBlue = null;
+                if (hasActual) {
+                    actual.reds.forEach(function (n) { actualRedSet[n] = true; });
+                    actualBlue = actual.blue;
+                }
+
+                // 生成带高亮的球
+                function ballHtml(num, isBlue, size) {
+                    var sz = size || '';
+                    var szStyle = sz ? 'width:' + sz + 'px;height:' + sz + 'px;font-size:' + Math.max(10, Math.floor(sz * 0.4)) + 'px' : '';
+                    var hitClass = '';
+                    if (hasActual) {
+                        if (!isBlue && actualRedSet[num]) hitClass = ' hit-red';
+                        if (isBlue && num === actualBlue) hitClass = ' hit-blue';
+                    }
+                    var cls = isBlue ? 'b' : 'r';
+                    return '<span class="bl ' + cls + hitClass + '" style="' + szStyle + '">' + pad2(num) + '</span>';
+                }
+
                 document.getElementById('recTitle').textContent = '🔮 第' + rec.issue + '期 推荐号码';
                 document.getElementById('recSub').textContent = '开奖日期: ' + rec.date + ' | 基于第' + rec.basedOnIssue + '期数据分析 | 保存时间: ' + new Date(rec.savedAt).toLocaleString('zh-CN');
 
                 var h = '';
+
+                // 实际开奖结果对照区
+                if (hasActual) {
+                    h += '<div class="match-header">';
+                    h += '<div class="actual-draw"><span class="actual-label">🎯 开奖号码</span>';
+                    actual.reds.forEach(function (n) { h += ballHtml(n, false, 28); });
+                    h += '<span class="combo-plus" style="margin:0 4px">+</span>';
+                    h += ballHtml(actual.blue, true, 28);
+                    h += '</div>';
+                    h += '<div style="font-size:11px;color:var(--t2)">✅ 已开奖 · 中奖号码高亮显示</div>';
+                    h += '</div>';
+                }
+
                 var stars = function (n) { return '★'.repeat(n) + '☆'.repeat(4 - n); };
 
                 // 推荐组合
                 if (rec.combos && rec.combos.length) {
                     h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#CE93D8;margin-bottom:8px">🎰 推荐号码组合</div>';
                     rec.combos.forEach(function (c) {
+                        // 计算中奖
+                        var hitRed = 0, hitBlueFlag = false;
+                        if (hasActual) {
+                            c.reds.forEach(function (n) { if (actualRedSet[n]) hitRed++; });
+                            hitBlueFlag = c.blue === actualBlue;
+                        }
+                        var prize = hasActual ? calcPrize(hitRed, hitBlueFlag) : null;
+
                         h += '<div class="combo-item">';
                         h += '<div class="combo-label"><div class="c-icon">' + c.icon + '</div><div class="c-name">' + c.name + '</div><div class="c-desc">' + c.desc + '</div></div>';
                         h += '<div class="combo-balls">';
-                        c.reds.forEach(function (n) { h += '<span class="bl r" style="width:26px;height:26px;font-size:11px">' + pad2(n) + '</span>'; });
+                        c.reds.forEach(function (n) { h += ballHtml(n, false, 26); });
                         h += '<span class="combo-plus" style="margin:0 4px">+</span>';
-                        h += '<span class="bl b" style="width:26px;height:26px;font-size:11px">' + pad2(c.blue) + '</span>';
-                        h += '</div></div>';
+                        h += ballHtml(c.blue, true, 26);
+                        h += '</div>';
+                        if (hasActual) {
+                            h += '<div class="combo-match-info">';
+                            h += hitCountHtml(hitRed, hitBlueFlag, prize);
+                            h += prizeBadgeHtml(prize);
+                            h += '</div>';
+                        }
+                        h += '</div>';
                     });
                     h += '</div>';
                 }
 
-                // 策略擂台赛（表格式，和首页一样）
+                // 策略擂台赛
                 if (rec.arena) {
                     var pNames = { last30: '近30期', last100: '近100期', last1000: '近1000期', all: '全部历史' };
                     var strats = [
@@ -699,6 +878,7 @@
                         h += '<th style="text-align:left;padding:2px 0;width:120px">策略</th>';
                         h += '<th style="text-align:left;padding:2px 0">推荐红球</th>';
                         h += '<th style="text-align:left;padding:2px 0;width:80px">蓝球</th>';
+                        if (hasActual) h += '<th style="text-align:right;padding:2px 0;width:140px">命中</th>';
                         h += '</tr></thead><tbody>';
                         strats.forEach(function (s) {
                             var reds = rec.arena[pk].red[s.k] || [];
@@ -706,11 +886,22 @@
                             h += '<tr style="border-top:1px solid rgba(255,255,255,.03)">';
                             h += '<td style="padding:4px 0"><div style="display:flex;align-items:center;gap:4px"><span style="font-size:14px">' + s.i + '</span><span style="font-size:11px;font-weight:600;color:' + s.c + '">' + s.n + '</span></div></td>';
                             h += '<td style="padding:4px 0"><div style="display:flex;gap:3px;flex-wrap:wrap">';
-                            reds.forEach(function (r) { h += '<span class="bl r" style="width:22px;height:22px;font-size:10px">' + pad2(r.number) + '</span>'; });
+                            reds.forEach(function (r) { h += ballHtml(r.number, false, 22); });
                             h += '</div></td>';
                             h += '<td style="padding:4px 0"><div style="display:flex;gap:3px;flex-wrap:wrap">';
-                            blues.forEach(function (b) { h += '<span class="bl b" style="width:22px;height:22px;font-size:10px">' + pad2(b.number) + '</span>'; });
+                            blues.forEach(function (b) { h += ballHtml(b.number, true, 22); });
                             h += '</div></td>';
+                            if (hasActual) {
+                                // 策略擂台赛的命中统计（红球取前6，蓝球取第1个）
+                                var sHitRed = 0;
+                                reds.slice(0, 6).forEach(function (r) { if (actualRedSet[r.number]) sHitRed++; });
+                                var sHitBlue = blues.length > 0 && blues[0].number === actualBlue;
+                                var sPrize = calcPrize(sHitRed, sHitBlue);
+                                h += '<td style="padding:4px 0;text-align:right">';
+                                h += hitCountHtml(sHitRed, sHitBlue, sPrize);
+                                if (sPrize) h += ' ' + prizeBadgeHtml(sPrize);
+                                h += '</td>';
+                            }
                             h += '</tr>';
                         });
                         h += '</tbody></table></div>';
@@ -721,11 +912,24 @@
                 // 终极混合推荐
                 if (rec.mixedRed && rec.mixedRed.length) {
                     var pn = { last30: '30期', last100: '100期', last1000: '1000期', all: '全部' };
-                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#FFD54F;margin-bottom:8px">👑 终极混合推荐</div>';
+                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#FFD54F;margin-bottom:8px">👑 终极混合推荐';
+
+                    // 混合推荐命中统计
+                    if (hasActual) {
+                        var mHitRed = 0;
+                        rec.mixedRed.forEach(function (r) { if (actualRedSet[r.number]) mHitRed++; });
+                        var mHitBlue = rec.mixedBlue && rec.mixedBlue.length > 0 && rec.mixedBlue[0].number === actualBlue;
+                        var mPrize = calcPrize(mHitRed, mHitBlue);
+                        h += ' <span style="font-size:12px;font-weight:400">';
+                        h += hitCountHtml(mHitRed, mHitBlue, mPrize) + ' ' + prizeBadgeHtml(mPrize);
+                        h += '</span>';
+                    }
+                    h += '</div>';
+
                     h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
                     rec.mixedRed.forEach(function (r) {
                         h += '<div style="display:flex;flex-direction:column;align-items:center">';
-                        h += '<span class="bl r" style="width:30px;height:30px;font-size:12px">' + pad2(r.number) + '</span>';
+                        h += ballHtml(r.number, false, 30);
                         h += '<span style="font-size:10px;color:#FFD54F;margin-top:2px">' + r.score + '</span>';
                         h += '</div>';
                     });
@@ -734,7 +938,7 @@
                         h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">';
                         rec.mixedBlue.forEach(function (b) {
                             h += '<div style="display:flex;flex-direction:column;align-items:center">';
-                            h += '<span class="bl b" style="width:30px;height:30px;font-size:12px">' + pad2(b.number) + '</span>';
+                            h += ballHtml(b.number, true, 30);
                             h += '<span style="font-size:10px;color:#FFD54F;margin-top:2px">' + b.score + '</span>';
                             h += '</div>';
                         });
@@ -746,11 +950,24 @@
                 // AI 预测
                 if (rec.aiPrediction) {
                     var ai = rec.aiPrediction;
-                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#00E676;margin-bottom:8px">🤖 AI 模型预测</div>';
+                    h += '<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:600;color:#00E676;margin-bottom:8px">🤖 AI 模型预测';
+
+                    // AI 命中统计
+                    if (hasActual) {
+                        var aHitRed = 0;
+                        ai.reds.forEach(function (n) { if (actualRedSet[n]) aHitRed++; });
+                        var aHitBlue = ai.blue === actualBlue;
+                        var aPrize = calcPrize(aHitRed, aHitBlue);
+                        h += ' <span style="font-size:12px;font-weight:400">';
+                        h += hitCountHtml(aHitRed, aHitBlue, aPrize) + ' ' + prizeBadgeHtml(aPrize);
+                        h += '</span>';
+                    }
+                    h += '</div>';
+
                     h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
-                    ai.reds.forEach(function (n) { h += '<span class="bl r" style="width:30px;height:30px;font-size:12px">' + pad2(n) + '</span>'; });
+                    ai.reds.forEach(function (n) { h += ballHtml(n, false, 30); });
                     h += '<span class="combo-plus" style="margin:0 4px">+</span>';
-                    h += '<span class="bl b" style="width:30px;height:30px;font-size:12px">' + pad2(ai.blue) + '</span>';
+                    h += ballHtml(ai.blue, true, 30);
                     h += '</div></div>';
                 }
 
